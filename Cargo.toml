@@ -1,0 +1,39 @@
+[package]
+name = "sam-rust-app"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+anyhow = "1.0.63"
+async-trait = "0.1.57"
+aws-config = "0.8"
+aws-sdk-dynamodb = "0.8"
+aws-smithy-client = { version = "0.38", features = ["test-util"] }
+aws_lambda_events = "0.6.3"
+http = "0.2"
+lambda_runtime = "0.6.0"
+mockall = "0.11.2"
+serde = {version = "1.0.144", features = ["derive"]}
+serde_dynamo = { version = "4.0.6", features = ["aws-sdk-dynamodb+0_8"] }
+serde_json = "1.0.85"
+thiserror = "1.0.33"
+tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+aws-smithy-http = "0.38"
+aws-types = { version = "0.8", features = ["hardcoded-credentials"] }
+http = "0.2"
+
+[features]
+integration_tests = []
+unit_tests = []
+
+[[bin]]
+name = "put-function"
+path = "./src/put.rs"
+
+[[bin]]
+name = "get-function"
+path = "./src/get.rs"

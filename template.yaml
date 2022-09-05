@@ -1,0 +1,88 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: >
+  sam-rust-app
+  Sample SAM Template for sam-rust-app
+
+Globals:
+  Function:
+    Timeout: 3
+    Tracing: Active
+  Api:
+    TracingEnabled: True
+
+Resources:
+  Table:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      KeySchema:
+        - AttributeName: id
+          KeyType: HASH
+      AttributeDefinitions:
+        - AttributeName: id
+          AttributeType: S
+      BillingMode: PAY_PER_REQUEST
+
+  PutFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/lambda/put-function
+      Handler: bootstrap
+      Runtime: provided.al2
+      Architectures:
+        - x86_64
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Method: Put
+            Path: /{id}
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Table
+      Policies:
+        - Statement:
+            - Sid: AllowDynamoDBPuts
+              Effect: Allow
+              Action:
+                - dynamodb:PutItem
+              Resource:
+                - !Sub ${Table.Arn}
+                - !Sub ${Table.Arn}/*
+  GetFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: target/lambda/get-function
+      Handler: bootstrap
+      Runtime: provided.al2
+      Architectures:
+        - x86_64
+      Events:
+        HelloWorld:
+          Type: Api
+          Properties:
+            Method: Get
+            Path: /{id}
+      Environment:
+        Variables:
+          TABLE_NAME: !Ref Table
+      Policies:
+        - Statement:
+            - Sid: AllowDynamoDBGets
+              Effect: Allow
+              Action:
+                - dynamodb:GetItem
+              Resource:
+                - !Sub ${Table.Arn}
+                - !Sub ${Table.Arn}/*
+
+Outputs:
+  PutApi:
+    Description: "API Gateway endpoint URL for Prod stage for Put function"
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/"
+  PutFunction:
+    Description: "Put Lambda Function ARN"
+    Value: !GetAtt PutFunction.Arn
+  # PutTable:
+  #   Description: "DynamoDB table name"
+  #   Value: !GetAtt Table.Arn
