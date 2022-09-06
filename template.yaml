@@ -77,12 +77,9 @@ Resources:
                 - !Sub ${Table.Arn}/*
 
 Outputs:
-  PutApi:
+  API:
     Description: "API Gateway endpoint URL for Prod stage for Put function"
     Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.${AWS::URLSuffix}/Prod/"
-  PutFunction:
-    Description: "Put Lambda Function ARN"
-    Value: !GetAtt PutFunction.Arn
-  # PutTable:
-  #   Description: "DynamoDB table name"
-  #   Value: !GetAtt Table.Arn
+  Table:
+    Description: "DynamoDB table name"
+    Value: !Ref Table

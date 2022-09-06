@@ -49,3 +49,33 @@
   - In Go, if a function takes an interface as a parameter, all your struct has to do is to fullfil that interface, no need to couple the interface declaration and the implementation together.
 
 - Mocking is done through macros and not code generation like in the case of Go.
+
+- The Rust built-in test framework does not expose any hooks like `setup` or `init`. **This makes it hard to setup environment variables before running the test** (think DynamoDB table names and such).
+
+  - Others suggested writing a macro, using the `sync::Once` or using some kind of testing framework, for example the [stainless](https://github.com/reem/stainless) one.
+
+  - I think I like the approach of `sync::Once` the most as it is the most straightforward one.
+
+    ```rust
+    static INIT: Once = Once::new();
+    fn initialize() {
+        INIT.call_once(|| env::set_var("TABLE_NAME", "sam-rust-app-Table-H3J30UUTALAN"))
+    }
+
+    #[test]
+    fn do_something() -> Result<()> {
+      initialize();
+
+      // ...
+
+      return Ok(());
+    }
+    ```
+
+- It is very frustrating that the AWS SAM does not have the `--stack-outputs` option like the CDK.
+
+  - You have to get the stack outputs manually, via the AWS CLI.
+
+    ```bash
+    aws cloudformation describe-stacks --stack-name YOUR_STACK_NAME --query "Stacks[0].Outputs"
+    ```

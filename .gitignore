@@ -1,3 +1,4 @@
 .aws-sam
 target
 samconfig.toml
+outputs.json
