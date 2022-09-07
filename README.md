@@ -79,3 +79,5 @@
     ```bash
     aws cloudformation describe-stacks --stack-name YOUR_STACK_NAME --query "Stacks[0].Outputs"
     ```
+
+- Creating the test events for the handlers is not that bad. Using `serde_json` and parsing the "raw strings" seem to get the job done.

@@ -1,9 +1,8 @@
-use std::{collections::HashMap, env};
+use std::env;
 
 use anyhow::Result;
 use aws_lambda_events::apigw::{ApiGatewayProxyRequest, ApiGatewayProxyResponse};
 
-use http::{HeaderMap, HeaderValue};
 use lambda_runtime::{service_fn, LambdaEvent};
 
 mod apigw;
@@ -61,13 +60,16 @@ mod tests {
 
     use super::*;
     use anyhow::anyhow;
+    use http::{HeaderMap, HeaderValue};
 
     #[tokio::test]
     #[cfg_attr(not(feature = "unit_tests"), ignore)]
     async fn test_invalid_path_parameters() -> Result<()> {
         let store = store::MockItemSaver::new();
 
-        let payload = create_event(HashMap::new())?;
+        let raw_payload = r#"{"httpMethod": "PUT"}"#;
+        let payload: ApiGatewayProxyRequest = serde_json::from_str(&raw_payload)?;
+
         let context = create_context()?;
 
         let payload = LambdaEvent { payload, context };
@@ -87,7 +89,8 @@ mod tests {
             .times(1)
             .return_once(|_| return Err(anyhow!("Error!")));
 
-        let payload = create_event(HashMap::from([(String::from("id"), String::from("123"))]))?;
+        let raw_payload = r#"{"pathParameters": {"id": "123"}, "httpMethod": "PUT"}"#;
+        let payload: ApiGatewayProxyRequest = serde_json::from_str(&raw_payload)?;
         let context = create_context()?;
 
         let payload = LambdaEvent { payload, context };
@@ -115,8 +118,9 @@ mod tests {
                 println!("error: {:?}", error)
             }
         }
+        let raw_payload = r#"{"pathParameters": {"id": "123"}, "httpMethod": "PUT"}"#;
+        let payload: ApiGatewayProxyRequest = serde_json::from_str(&raw_payload)?;
 
-        let payload = create_event(HashMap::from([(String::from("id"), String::from("123"))]))?;
         let context = create_context()?;
 
         let result = lambda_handler(LambdaEvent { payload, context }).await?;
@@ -128,56 +132,18 @@ mod tests {
 
         return Ok(());
     }
-}
 
-static REQUEST: &str = r#"{
-    "body": "{}",
-    "headers":null,
-    "httpMethod":"PUT",
-    "isBase64Encoded":false,
-    "multiValueHeaders":null,
-    "multiValueQueryStringParameters":null,
-    "path":"/myPath",
-    "pathParameters": null,
-    "queryStringParameters":null,
-    "requestContext":{
-       "accountId":"xxxxx",
-       "apiId":"xxxxx",
-       "domainName":"testPrefix.testDomainName",
-       "domainPrefix":"testPrefix",
-       "extendedRequestId":"NvWWKEZbliAFliA=",
-       "httpMethod":"POST",
-       "identity":{},
-       "path":"/myPath",
-       "protocol":"HTTP/1.1",
-       "requestId":"e5488776-afe4-4e5e-92b1-37bd23f234d6",
-       "requestTime":"18/Feb/2022:13:23:12 +0000",
-       "requestTimeEpoch":1645190592806,
-       "resourceId":"ddw8yd",
-       "resourcePath":"/myPath",
-       "stage":"test-invoke-stage"
-    },
-    "resource":"/myPath",
-    "stageVariables":null
-}"#;
-
-fn create_event(path_parameters: HashMap<String, String>) -> Result<ApiGatewayProxyRequest> {
-    let mut base: ApiGatewayProxyRequest = serde_json::from_str(REQUEST)?;
-    base.path_parameters = path_parameters;
-
-    return Ok(base);
-}
-
-fn create_context() -> Result<lambda_runtime::Context> {
-    let mut headers = HeaderMap::new();
-    headers.insert(
-        "lambda-runtime-aws-request-id",
-        HeaderValue::from_static("my-id"),
-    );
-    headers.insert(
-        "lambda-runtime-deadline-ms",
-        HeaderValue::from_static("123"),
-    );
-    let context = lambda_runtime::Context::try_from(headers).unwrap();
-    return Ok(context);
+    fn create_context() -> Result<lambda_runtime::Context> {
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "lambda-runtime-aws-request-id",
+            HeaderValue::from_static("my-id"),
+        );
+        headers.insert(
+            "lambda-runtime-deadline-ms",
+            HeaderValue::from_static("123"),
+        );
+        let context = lambda_runtime::Context::try_from(headers).unwrap();
+        return Ok(context);
+    }
 }
